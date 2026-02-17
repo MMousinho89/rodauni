@@ -1,5 +1,3 @@
-/public_html
-   ├── index.php        ← SITE INSTITUCIONAL
-   └── sistema/
-         ├── index.php  ← REDIRECIONA PARA LOGIN
-         └── public/login.php
+<?php
+header("Location: /sistema/public/login.php");
+exit;
