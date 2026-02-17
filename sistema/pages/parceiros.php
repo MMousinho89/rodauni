@@ -1,6 +1,56 @@
-  <?php
-require_once __DIR__ . '/../includes/auth_check.php';
-require_once __DIR__ . '/../config/database.php';
+<?php
+// =====================================================
+// RODAUNI — Parceiros (Modelo União)
+// - Debug controlado por querystring ?debug=1
+// - Fallback amigável (evita tela branca)
+// =====================================================
+
+$debug = (isset($_GET['debug']) && $_GET['debug'] == '1');
+
+if ($debug) {
+  ini_set('display_errors', '1');
+  ini_set('display_startup_errors', '1');
+  error_reporting(E_ALL);
+} else {
+  ini_set('display_errors', '0');
+  ini_set('display_startup_errors', '0');
+  error_reporting(E_ALL);
+}
+
+// Helper: falha amigável (evita branco)
+function ru_fatal(string $title, string $details = ''): void {
+  http_response_code(500);
+  $safeTitle = htmlspecialchars($title, ENT_QUOTES, 'UTF-8');
+  $safeDetails = htmlspecialchars($details, ENT_QUOTES, 'UTF-8');
+  echo "<!doctype html><html lang='pt-br'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
+  <title>RODAUNI — Erro</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;background:#e9ecef;margin:0;padding:24px;}
+    .card{max-width:900px;margin:0 auto;background:#fff;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:18px;}
+    h1{font-size:18px;margin:0 0 10px;}
+    pre{background:#111;color:#f5f5f5;padding:12px;border-radius:10px;overflow:auto;}
+    .muted{color:#6b7280;font-size:13px;}
+    a{color:#0d6efd;text-decoration:none;}
+  </style></head><body>
+    <div class='card'>
+      <h1>⚠️ {$safeTitle}</h1>
+      <div class='muted'>Se estiver em produção, abra com <b>?debug=1</b> para ver o erro detalhado (temporário).</div>
+      ".($safeDetails ? "<pre>{$safeDetails}</pre>" : "")."
+    </div>
+  </body></html>";
+  exit;
+}
+
+// Includes com checagem (se falhar, mostra erro ao invés de branco)
+$authFile = __DIR__ . '/../includes/auth_check.php';
+$dbFile   = __DIR__ . '/../config/database.php';
+$sidebar  = __DIR__ . '/../partials/sidebar.php';
+
+if (!file_exists($authFile)) ru_fatal("Arquivo ausente: auth_check.php", $authFile);
+if (!file_exists($dbFile))   ru_fatal("Arquivo ausente: database.php", $dbFile);
+
+require_once $authFile;
+require_once $dbFile;
 
 $usuarioNome = $_SESSION['usuario_nome'] ?? 'Usuário';
 ?>
@@ -33,18 +83,36 @@ $usuarioNome = $_SESSION['usuario_nome'] ?? 'Usuário';
       background: #fff3cd;
       border-color: rgba(0,0,0,.18);
     }
+
+    /* Debug badge opcional */
+    .ru-debug-badge{
+      font-size:12px; padding:.25rem .5rem; border:1px solid rgba(0,0,0,.12);
+      border-radius:999px; background:#fff; color:#6b7280;
+    }
   </style>
 </head>
 
 <body class="bg-light">
 <div class="ru-app">
-  <?php include __DIR__ . '/../partials/sidebar.php'; ?>
+  <?php
+    if (file_exists($sidebar)) {
+      include $sidebar;
+    } else {
+      // sidebar faltando => não quebra a tela
+      echo "<div style='padding:12px; margin:12px; background:#fff3cd; border:1px solid rgba(0,0,0,.12); border-radius:12px;'>
+              <b>Atenção:</b> sidebar.php não encontrada em produção: ".htmlspecialchars($sidebar,ENT_QUOTES,'UTF-8')."
+            </div>";
+    }
+  ?>
 
   <main class="ru-main">
     <div class="ru-page-title-line">
       <div>
         <div class="text-muted small">Cadastros</div>
         <h4 class="mb-0"><i class="bi bi-people me-1"></i>Parceiros</h4>
+        <?php if ($debug): ?>
+          <div class="mt-1"><span class="ru-debug-badge">DEBUG ATIVO (?debug=1)</span></div>
+        <?php endif; ?>
       </div>
 
       <div class="ru-page-actions d-flex flex-wrap gap-2">
@@ -332,7 +400,6 @@ function showTabDados(){
   const btn = document.getElementById('btnTabDados');
   if(!btn) return;
   bootstrap.Tab.getOrCreateInstance(btn).show();
-  // reforço estilo Filiais (garante no Chrome)
   setTimeout(()=> bootstrap.Tab.getOrCreateInstance(btn).show(), 30);
 }
 
@@ -541,20 +608,18 @@ function validateForm(){
 }
 
 /* ===========================
-   Form -> Object (map documento -> cpf/cnpj)
+   Form -> Object
 =========================== */
 function formDataToObject(form){
   const fd = new FormData(form);
   const obj = {};
   fd.forEach((v,k)=> obj[k] = v);
 
-  // id vazio => null
   if(obj.id !== undefined){
     const s = String(obj.id ?? '').trim();
     obj.id = (s === '') ? null : s;
   }
 
-  // normalizações básicas
   if(obj.cep !== undefined) obj.cep = maskCep(obj.cep);
   if(obj.uf !== undefined) obj.uf = normalizeUF(obj.uf);
   if(obj.ie !== undefined) obj.ie = maskIE(obj.ie);
@@ -574,7 +639,6 @@ function formDataToObject(form){
     }
   });
 
-  // ⭐ regra principal: documento vira cpf OU cnpj
   const tipo = String(obj.tipo_empresa || 'JURIDICA').toUpperCase();
   const docMasked = maskDocByTipo(obj.documento || '');
 
@@ -586,9 +650,7 @@ function formDataToObject(form){
     obj.cpf = null;
   }
 
-  // não mandamos "documento" pro banco (campo virtual da tela)
   delete obj.documento;
-
   return obj;
 }
 
@@ -759,7 +821,6 @@ async function loadParceiro(id, options={switchTab:true, silent:false}){
   $('#id_view').value = v.id || '';
   state.loadedId = v.id || null;
 
-  // preenche todos os campos que existem na tela
   for(const k in v){
     const el = document.getElementById(k);
     if(el && el.name){
@@ -767,7 +828,6 @@ async function loadParceiro(id, options={switchTab:true, silent:false}){
     }
   }
 
-  // documento vem pronto do backend
   applyMasksOnLoad();
 
   $('#auditCriado').textContent = `Criado: ${(v.criado_em || '—')} por ${(v.criado_por || '—')}`;
@@ -820,7 +880,6 @@ async function loadLista(){
       <td>${ativoTxt}</td>
     `;
 
-    // === MESMA LÓGICA DO FILIAIS: click com timer e dblclick cancela ===
     let clickTimer = null;
 
     tr.addEventListener('click', () => {
@@ -842,7 +901,6 @@ async function loadLista(){
       highlightSelectedRow();
       setToolbar();
 
-      // abre a aba DADOS (sem editar)
       showTabDados();
       await loadParceiro(state.selectedId, { switchTab:true, silent:true });
 
@@ -856,7 +914,6 @@ async function loadLista(){
   highlightSelectedRow();
 }
 
-/* SAVE / DELETE */
 async function saveParceiro(){
   if(!validateForm()) return;
 
@@ -957,7 +1014,7 @@ $('#filtroLista').addEventListener('keydown', (e)=>{
 });
 $('#filtroAtivo').addEventListener('change', loadLista);
 
-/* máscaras (só editando) */
+/* máscaras */
 bindMask($('#cep'), maskCep);
 bindMask($('#ie'), maskIE);
 bindMask($('#telefone1'), maskPhone);
