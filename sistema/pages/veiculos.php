@@ -10,8 +10,17 @@ function detectLabelColumn(PDO $pdo, string $table): string {
     FROM INFORMATION_SCHEMA.COLUMNS
     WHERE TABLE_SCHEMA = DATABASE()
       AND TABLE_NAME = :t
-      AND COLUMN_NAME IN ('descricao','nome','titulo','razao_social','nome_fantasia','fantasia','sigla')
-    ORDER BY FIELD(COLUMN_NAME,'descricao','nome','titulo','razao_social','nome_fantasia','fantasia','sigla')
+      AND COLUMN_NAME IN (
+        'nome_filial',
+        'descricao','nome','titulo',
+        'razao_social','nome_fantasia','fantasia','sigla'
+      )
+    ORDER BY FIELD(
+      COLUMN_NAME,
+      'nome_filial',
+      'descricao','nome','titulo',
+      'razao_social','nome_fantasia','fantasia','sigla'
+    )
     LIMIT 1
   ");
   $stmt->execute([':t' => $table]);
@@ -92,7 +101,7 @@ $optsTiposRastreador = fetchOptions($pdo, 'cad_tipos_rastreador', "WHERE ativo =
 
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-  <link rel="stylesheet" href="../assets/css/custom.css">
+  <link rel="stylesheet" href="../assets/css/custom.css?v=<?= @filemtime(__DIR__ . '/../assets/css/custom.css') ?>">
 
   <style>
     .ru-page-title-line{
@@ -195,7 +204,7 @@ $optsTiposRastreador = fetchOptions($pdo, 'cad_tipos_rastreador', "WHERE ativo =
                   </select>
                 </div>
 
-                <!-- ✅ Regrid: Parceiro maior / Classificação ao lado (sem buracos) -->
+                <!-- Parceiro / Classificação -->
                 <div class="col-md-4">
                   <label class="ru-field-label">Parceiro Comercial</label>
                   <select class="form-select form-select-sm" name="parceiro_id" id="parceiro_id">
@@ -223,7 +232,6 @@ $optsTiposRastreador = fetchOptions($pdo, 'cad_tipos_rastreador', "WHERE ativo =
                   </select>
                 </div>
 
-                <!-- ✅ Linha continua sem "Tipo (Vínculo)" -->
                 <div class="col-md-3">
                   <label class="ru-field-label">Tipo de Veículo</label>
                   <select class="form-select form-select-sm" name="tipo_veiculo_id" id="tipo_veiculo_id">
@@ -478,7 +486,7 @@ function setRastError(id, msg){
   if(box){ box.textContent = msg; box.classList.remove('d-none'); }
 }
 
-// ✅ auto: parceiro -> classif (PROPRIO/AGREGADO/TERCEIRO). Mantém ALUGADO manual.
+// auto: parceiro -> classif (PROPRIO/AGREGADO/TERCEIRO). Mantém ALUGADO manual.
 function applyParceiroAuto(){
   const parceiroSel = $('#parceiro_id');
   const classSel = $('#parceiro_classificacao');
@@ -735,7 +743,6 @@ $('#parceiro_classificacao')?.addEventListener('change', ()=>{
   if($('#parceiro_classificacao').value === 'PROPRIO'){
     $('#parceiro_id').value = '';
   }
-  // mantém ALUGADO manual; senão recalcula
   applyParceiroAuto();
 });
 
@@ -781,7 +788,7 @@ $('#filtroLista').addEventListener('keydown', (e)=>{
   if(e.key === 'Enter'){ e.preventDefault(); loadLista(); }
 });
 
-/* ===================== RASTREADOR (igual) ===================== */
+/* ===================== RASTREADOR ===================== */
 function setRastControlsEnabled(enabled){
   const hasVeic = !!($('#id').value);
   const can = enabled && hasVeic;

@@ -30,10 +30,6 @@ function normInt($v): ?int {
   if ($v === null || $v === '') return null;
   return (int)$v;
 }
-function normTinyInt($v): ?int {
-  if ($v === null || $v === '') return null;
-  return ((string)$v === '0') ? 0 : 1;
-}
 
 function detectLabelColumn(PDO $pdo, string $table): string {
   $stmt = $pdo->prepare("
@@ -41,8 +37,17 @@ function detectLabelColumn(PDO $pdo, string $table): string {
     FROM INFORMATION_SCHEMA.COLUMNS
     WHERE TABLE_SCHEMA = DATABASE()
       AND TABLE_NAME = :t
-      AND COLUMN_NAME IN ('descricao','nome','titulo','razao_social','nome_fantasia','fantasia','sigla')
-    ORDER BY FIELD(COLUMN_NAME,'descricao','nome','titulo','razao_social','nome_fantasia','fantasia','sigla')
+      AND COLUMN_NAME IN (
+        'nome_filial',
+        'descricao','nome','titulo',
+        'razao_social','nome_fantasia','fantasia','sigla'
+      )
+    ORDER BY FIELD(
+      COLUMN_NAME,
+      'nome_filial',
+      'descricao','nome','titulo',
+      'razao_social','nome_fantasia','fantasia','sigla'
+    )
     LIMIT 1
   ");
   $stmt->execute([':t' => $table]);
@@ -64,10 +69,10 @@ try {
   if ($action === 'list') {
     $f = trim((string)($_GET['f'] ?? ''));
 
-    $filLabel = detectLabelColumn($pdo, 'cad_filiais');
-    $tipLabel = detectLabelColumn($pdo, 'cad_tipos_veiculo');
-    $marLabel = detectLabelColumn($pdo, 'cad_marcas_veiculo');
-    $sitLabel = detectLabelColumn($pdo, 'cad_situacoes');
+    $filLabel = detectLabelColumn($pdo, 'cad_filiais');          // <- agora pega nome_filial
+    $tipLabel = detectLabelColumn($pdo, 'cad_tipos_veiculo');    // nome
+    $marLabel = detectLabelColumn($pdo, 'cad_marcas_veiculo');   // nome
+    $sitLabel = detectLabelColumn($pdo, 'cad_situacoes');        // descricao
 
     $sql = "
       SELECT v.id, v.placa,
@@ -135,7 +140,6 @@ try {
     exit;
   }
 
-  // monta payload só com colunas existentes
   $payload = [];
 
   $map = [
@@ -195,7 +199,6 @@ try {
     exit;
   }
 
-  // INSERT
   $fields = [];
   $marks  = [];
   $params = [];
