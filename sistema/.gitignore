@@ -1,0 +1,28 @@
+﻿# credenciais
+.env
+**/.env
+
+# python
+**/__pycache__/
+**/*.pyc
+venv/
+
+# logs
+*.log
+**/*.log
+
+# downloads do bot
+amazon_bot/downloads/
+amazon_bot/*.csv
+
+# webdriver cache
+amazon_bot/wdm_cache/
+
+# coisas do Windows
+Thumbs.db
+Desktop.ini
+
+# PHP / IDE
+.vscode/
+.idea/
+vendor/

@@ -1,0 +1,15 @@
+# ============================================
+# .htaccess (RODAUNI) - raiz do projeto
+# - NÃO força HTTPS em localhost (ambiente local)
+# - Força HTTPS apenas em produção (quando NÃO é localhost)
+# ============================================
+
+RewriteEngine On
+
+# 1) NÃO REDIRECIONAR PARA HTTPS EM LOCALHOST/127.0.0.1
+RewriteCond %{HTTP_HOST} ^(localhost|127\.0\.0\.1)$ [NC]
+RewriteRule ^ - [L]
+
+# 2) EM PRODUÇÃO: FORÇA HTTPS
+RewriteCond %{HTTPS} off
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
