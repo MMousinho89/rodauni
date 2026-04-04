@@ -1,14 +1,15 @@
 <?php
 // ============================================
 // config/app.php
-// Ajustado para funcionar em DEV e PRODUÇÃO
+// Compatível com PHP 5.5+ em DEV e PRODUÇÃO
 // ============================================
 
 $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
 $host = isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : 'localhost';
 
 // Caminho do script atual
-$scriptDir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? ''));
+$scriptName = isset($_SERVER['SCRIPT_NAME']) ? $_SERVER['SCRIPT_NAME'] : '';
+$scriptDir = str_replace('\\', '/', dirname($scriptName));
 
 // Remove /public ou /pages do final
 $basePath = preg_replace('#/(public|pages)(/.*)?$#', '', $scriptDir);
