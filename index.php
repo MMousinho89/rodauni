@@ -1,5 +1,13 @@
 <?php
 header('Content-Type: text/html; charset=UTF-8');
+
+$scriptDir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? ''));
+$basePath  = rtrim($scriptDir, '/');
+if ($basePath === '/' || $basePath === '.') {
+    $basePath = '';
+}
+
+$loginUrl = $basePath . '/sistema/public/login.php';
 ?>
 <!doctype html>
 <html lang="pt-br">
@@ -39,9 +47,7 @@ header('Content-Type: text/html; charset=UTF-8');
     <p>Site online ✅</p>
     <p><small>Sistema RODAUNI em implantação.</small></p>
 
-    <!-- CAMINHO CORRETO -->
-    <a class="btn" href="/rodauni/sistema/public/login.php">Acessar Sistema</a>
-
+    <a class="btn" href="<?= htmlspecialchars($loginUrl, ENT_QUOTES, 'UTF-8') ?>">Acessar Sistema</a>
   </div>
 </body>
 </html>

@@ -1,13 +1,9 @@
 RewriteEngine On
 
-# localhost
+# localhost / ambiente local
 RewriteCond %{HTTP_HOST} ^(localhost|127\.0\.0\.1)$ [NC]
 RewriteRule ^ - [L]
 
 # força https em produção
 RewriteCond %{HTTPS} off
 RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
-
-# manda tudo para a pasta do projeto
-RewriteCond %{REQUEST_URI} !^/uniaopirestransportes/
-RewriteRule ^(.*)$ /uniaopirestransportes/$1 [L]
