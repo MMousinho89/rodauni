@@ -1,20 +1,21 @@
 <?php
 /*
 |--------------------------------------------------------------------------
-| BOOT MASTER TOTAL - COMPATÍVEL
+| BOOT MASTER TOTAL - TODOS OS ARQUIVOS
 |--------------------------------------------------------------------------
 | Mostra:
 | 1) Estrutura completa em árvore
 | 2) Filtros
 | 3) Ambiente
-| 4) Todos os códigos um embaixo do outro
+| 4) TODOS os arquivos do projeto um embaixo do outro
 |--------------------------------------------------------------------------
 */
 
 $BOOT_TOKEN = 'rodauni123';
 $IGNORED_DIRS = array('.git', '.github', '.vscode', '.idea', 'node_modules', 'vendor', '.well-known');
 $IGNORED_FILES = array();
-$MAX_FILE_SIZE = 1024 * 1024 * 2;
+$MAX_FILE_SIZE = 1024 * 1024 * 3; // 3 MB
+$DEFAULT_EXT = '*'; // * = todos os arquivos
 
 $remoteAddr = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '';
 $host = isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : 'localhost';
@@ -43,7 +44,7 @@ $bootBaseUrl = rtrim($protocol . $host . ($scriptDir === '/' ? '' : $scriptDir),
 
 $filter = isset($_GET['filter']) ? trim($_GET['filter']) : '';
 $folder = isset($_GET['folder']) ? trim($_GET['folder']) : '';
-$ext    = isset($_GET['ext']) ? trim($_GET['ext']) : 'php';
+$ext    = isset($_GET['ext']) ? trim($_GET['ext']) : $DEFAULT_EXT;
 $showServer = isset($_GET['server']) && $_GET['server'] === '1';
 
 function h($value)
@@ -103,6 +104,27 @@ function buildUrlCompat($params)
     return $bootBaseUrl . ($query ? '?' . $query : '');
 }
 
+function fileMatchesExtCompat($fullPath, $extension)
+{
+    if ($extension === '' || $extension === '*') {
+        return true;
+    }
+
+    $basename = basename($fullPath);
+
+    // filtro especial para dotfiles
+    if ($extension === 'dot') {
+        return isset($basename[0]) && $basename[0] === '.';
+    }
+
+    // sem extensão
+    if ($extension === 'noext') {
+        return pathinfo($basename, PATHINFO_EXTENSION) === '';
+    }
+
+    return strtolower(pathinfo($fullPath, PATHINFO_EXTENSION)) === strtolower(ltrim($extension, '.'));
+}
+
 function collectFilesCompat($dir, $root, $ignoredDirs, $ignoredFiles, $extension)
 {
     $result = array();
@@ -132,7 +154,7 @@ function collectFilesCompat($dir, $root, $ignoredDirs, $ignoredFiles, $extension
             continue;
         }
 
-        if ($extension !== '' && strtolower(pathinfo($full, PATHINFO_EXTENSION)) !== strtolower($extension)) {
+        if (!fileMatchesExtCompat($full, $extension)) {
             continue;
         }
 
@@ -148,6 +170,7 @@ function collectFilesCompat($dir, $root, $ignoredDirs, $ignoredFiles, $extension
             'relative' => relativePathCompat($full, $root),
             'size' => $size,
             'readable' => is_readable($full),
+            'ext' => strtolower(pathinfo($full, PATHINFO_EXTENSION))
         );
     }
 
@@ -277,7 +300,10 @@ if ($filter !== '') {
     $filtered = array();
 
     foreach ($files as $file) {
-        if (stripos($file['relative'], $filter) !== false || stripos($file['name'], $filter) !== false) {
+        if (
+            stripos($file['relative'], $filter) !== false ||
+            stripos($file['name'], $filter) !== false
+        ) {
             $filtered[] = $file;
         }
     }
@@ -295,12 +321,12 @@ foreach ($files as $f) {
 <html lang="pt-br">
 <head>
     <meta charset="utf-8">
-    <title>BOOT MASTER TOTAL - CÓDIGOS EM BLOCO + ÁRVORE</title>
+    <title>BOOT MASTER TOTAL - TODOS OS ARQUIVOS</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         * { box-sizing: border-box; }
         body { margin: 0; background: #eef2f7; color: #1f2937; font-family: Arial, Helvetica, sans-serif; }
-        .wrap { max-width: 1600px; margin: 0 auto; padding: 18px; }
+        .wrap { max-width: 1700px; margin: 0 auto; padding: 18px; }
         .card { background: #fff; border-radius: 16px; padding: 16px; box-shadow: 0 10px 30px rgba(0,0,0,.08); margin-bottom: 16px; }
         h1, h2, h3 { margin-top: 0; }
         .meta { width: 100%; border-collapse: collapse; }
@@ -334,14 +360,14 @@ foreach ($files as $f) {
 <div class="wrap">
 
     <div class="card">
-        <h1>BOOT MASTER TOTAL - CÓDIGOS EM BLOCO + ÁRVORE</h1>
+        <h1>BOOT MASTER TOTAL - TODOS OS ARQUIVOS</h1>
         <div class="summary">
             <span class="pill">Ambiente: <?php echo $isLocal ? 'LOCAL' : 'PRODUÇÃO'; ?></span>
             <span class="pill">Host: <?php echo h($host); ?></span>
             <span class="pill">Projeto: <?php echo h($projectRoot); ?></span>
             <span class="pill">Arquivos listados: <?php echo $totalFiles; ?></span>
             <span class="pill">Tamanho total: <?php echo formatBytesCompat($totalSize); ?></span>
-            <span class="pill">Extensão: <?php echo h($ext); ?></span>
+            <span class="pill">Filtro ext: <?php echo h($ext); ?></span>
         </div>
     </div>
 
@@ -372,7 +398,7 @@ foreach ($files as $f) {
 
                 <div class="field">
                     <label>Extensão</label>
-                    <input type="text" name="ext" value="<?php echo h($ext); ?>" placeholder="php">
+                    <input type="text" name="ext" value="<?php echo h($ext); ?>" placeholder="* para todos | php | md | noext | dot">
                 </div>
 
                 <div class="actions">
@@ -385,9 +411,12 @@ foreach ($files as $f) {
 
         <div style="margin-top:12px" class="small">
             Exemplos:
-            <span class="mono">folder=sistema/pages</span>,
-            <span class="mono">filter=index</span>,
-            <span class="mono">ext=php</span>
+            <span class="mono">ext=*</span>,
+            <span class="mono">ext=php</span>,
+            <span class="mono">ext=dot</span>,
+            <span class="mono">ext=noext</span>,
+            <span class="mono">filter=.htaccess</span>,
+            <span class="mono">folder=sistema/pages</span>
         </div>
     </div>
 
@@ -423,6 +452,7 @@ foreach ($files as $f) {
                         <div class="file-meta">
                             Tamanho: <?php echo formatBytesCompat($file['size']); ?> |
                             Leitura: <?php echo $file['readable'] ? 'OK' : 'SEM ACESSO'; ?> |
+                            Extensão: <?php echo h($file['ext'] !== '' ? $file['ext'] : '(sem extensão)'); ?> |
                             Caminho: <span class="mono"><?php echo h($file['full']); ?></span>
                         </div>
                     </div>
