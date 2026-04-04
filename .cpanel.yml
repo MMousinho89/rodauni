@@ -1,7 +1,9 @@
 ---
 deployment:
   tasks:
-    - export DEPLOYPATH=/home1/uniaop25/public_html
+    - export DEPLOYPATH=/home1/uniaop25/public_html/uniaopirestransportes
+    - /bin/mkdir -p $DEPLOYPATH
     - /bin/cp -R sistema $DEPLOYPATH
     - /bin/cp index.php $DEPLOYPATH
-    - /bin/cp .htaccess $DEPLOYPATH || true
+    - /bin/cp .htaccess $DEPLOYPATH
+    - /bin/cp gerar_hash.php $DEPLOYPATH
