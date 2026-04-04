@@ -17,7 +17,7 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
 
-// Compatibilidade: se algum arquivo antigo gravar outros nomes, tenta normalizar
+// Compatibilidade com nomes antigos de sessão
 if (empty($_SESSION['usuario_id'])) {
     if (!empty($_SESSION['user_id'])) {
         $_SESSION['usuario_id'] = $_SESSION['user_id'];
@@ -34,9 +34,8 @@ if (empty($_SESSION['usuario_nome'])) {
     }
 }
 
-// Se não tiver sessão válida -> volta pro login
+// Se não estiver logado, volta para o login
 if (empty($_SESSION['usuario_id'])) {
-    $url = BASE_URL . "/public/login.php";
-    header("Location: " . $url);
+    header("Location: " . BASE_URL . "/public/login.php");
     exit;
 }

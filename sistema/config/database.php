@@ -34,7 +34,6 @@ if ($isLocal) {
 // 3. Conexão PDO
 // ----------------------------------------------------------
 try {
-
     $dsn = "mysql:host={$DB_HOST};dbname={$DB_NAME};charset=utf8mb4";
 
     $pdo = new PDO(
@@ -48,12 +47,9 @@ try {
     );
 
 } catch (PDOException $e) {
-
-    // LOCAL → mostra erro completo
     if ($isLocal) {
         die("❌ Erro ao conectar ao banco: " . $e->getMessage());
     }
 
-    // PRODUÇÃO → erro genérico (segurança)
     die("Erro ao conectar ao banco de dados.");
 }

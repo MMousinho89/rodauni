@@ -9,7 +9,7 @@ if ($basePath === '/' || $basePath === '.') {
     $basePath = '';
 }
 
-$loginUrl = '/sistema/public/login.php';
+$loginUrl = $basePath . '/sistema/public/login.php';
 ?>
 <!doctype html>
 <html lang="pt-br">
@@ -22,14 +22,14 @@ $loginUrl = '/sistema/public/login.php';
       font-family:Arial,Helvetica,sans-serif;
       margin:40px;
       background:#f6f7f9;
-      color:#222
+      color:#222;
     }
     .card{
       max-width:760px;
       background:#fff;
       border-radius:12px;
       padding:22px;
-      box-shadow:0 6px 18px rgba(0,0,0,.08)
+      box-shadow:0 6px 18px rgba(0,0,0,.08);
     }
     .btn{
       display:inline-block;
@@ -38,9 +38,9 @@ $loginUrl = '/sistema/public/login.php';
       border-radius:10px;
       background:#0d6efd;
       color:#fff;
-      text-decoration:none
+      text-decoration:none;
     }
-    small{color:#666}
+    small{color:#666;}
   </style>
 </head>
 <body>
