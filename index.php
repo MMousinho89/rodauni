@@ -9,7 +9,8 @@ if ($basePath === '/' || $basePath === '.') {
     $basePath = '';
 }
 
-$loginUrl = $basePath . '/sistema/public/login.php';
+// ✅ AJUSTE: link fixo para evitar erro de caminho
+$loginUrl = '/sistema/public/login.php';
 ?>
 <!doctype html>
 <html lang="pt-br">
