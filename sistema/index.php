@@ -1,3 +1,3 @@
 <?php
-header("Location: /rodauni/sistema/public/login.php");
+header("Location: /sistema/public/login.php");
 exit;

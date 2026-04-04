@@ -5,45 +5,48 @@ error_reporting(E_ALL);
 require_once __DIR__ . '/../config/app.php';
 require_once __DIR__ . '/../config/database.php';
 
-if (session_status() !== PHP_SESSION_ACTIVE) {
+if (session_status() === PHP_SESSION_NONE) {
     $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
 
-    session_set_cookie_params([
-        'lifetime' => 0,
-        'path'     => '/',
-        'secure'   => $isHttps,
-        'httponly' => true,
-        'samesite' => 'Lax'
-    ]);
+    session_set_cookie_params(
+        0,
+        '/',
+        '',
+        $isHttps,
+        true
+    );
 
     session_start();
 }
 
 $debug = (isset($_GET['debug']) && $_GET['debug'] == '1');
 $erro = '';
-$info = [];
+$info = array();
 $info_sql = '';
 
-function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
+function h($s) {
+    return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
+}
 
-function db_name(PDO $pdo): string {
+function db_name($pdo) {
     $db = $pdo->query("SELECT DATABASE()")->fetchColumn();
     return $db ? (string)$db : '';
 }
 
-function table_exists(PDO $pdo, string $db, string $table): bool {
+function table_exists($pdo, $db, $table) {
     $stmt = $pdo->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?");
-    $stmt->execute([$db, $table]);
-    return (int)$stmt->fetchColumn() > 0;
+    $stmt->execute(array($db, $table));
+    return ((int)$stmt->fetchColumn() > 0);
 }
 
-function columns(PDO $pdo, string $db, string $table): array {
+function columns($pdo, $db, $table) {
     $stmt = $pdo->prepare("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?");
-    $stmt->execute([$db, $table]);
-    return $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
+    $stmt->execute(array($db, $table));
+    $cols = $stmt->fetchAll(PDO::FETCH_COLUMN);
+    return is_array($cols) ? $cols : array();
 }
 
-function pick_first(array $cands, array $avail): ?string {
+function pick_first($cands, $avail) {
     $availL = array_map('strtolower', $avail);
     foreach ($cands as $c) {
         $i = array_search(strtolower($c), $availL, true);
@@ -66,7 +69,8 @@ try {
 
     $userTable = null;
 
-    foreach (['cad_usuarios', 'usuarios', 'tb_usuarios', 'users', 'user'] as $t) {
+    $tablesTry = array('cad_usuarios', 'usuarios', 'tb_usuarios', 'users', 'user');
+    foreach ($tablesTry as $t) {
         if (table_exists($pdo, $db, $t)) {
             $userTable = $t;
             break;
@@ -79,11 +83,12 @@ try {
             FROM INFORMATION_SCHEMA.TABLES
             WHERE TABLE_SCHEMA = ?
               AND (TABLE_NAME LIKE '%usuario%' OR TABLE_NAME LIKE '%user%')
-            ORDER BY (TABLE_NAME LIKE 'cad_%') DESC, TABLE_NAME ASC
+            ORDER BY TABLE_NAME ASC
             LIMIT 1
         ");
-        $stmt->execute([$db]);
-        $userTable = $stmt->fetchColumn() ?: null;
+        $stmt->execute(array($db));
+        $tmp = $stmt->fetchColumn();
+        $userTable = $tmp ? $tmp : null;
     }
 
     if (!$userTable) {
@@ -92,24 +97,24 @@ try {
 
     $cols = columns($pdo, $db, $userTable);
 
-    $colId    = pick_first(['id', 'usuario_id', 'id_usuario'], $cols);
-    $colNome  = pick_first(['nome', 'nome_usuario', 'name', 'usuario_nome'], $cols);
-    $colEmail = pick_first(['email', 'usuario', 'login', 'username', 'user', 'user_email'], $cols);
-    $colSenha = pick_first(['senha_hash', 'senha', 'password', 'pass'], $cols);
+    $colId    = pick_first(array('id', 'usuario_id', 'id_usuario'), $cols);
+    $colNome  = pick_first(array('nome', 'nome_usuario', 'name', 'usuario_nome'), $cols);
+    $colEmail = pick_first(array('email', 'usuario', 'login', 'username', 'user', 'user_email'), $cols);
+    $colSenha = pick_first(array('senha_hash', 'senha', 'password', 'pass'), $cols);
 
     if (!$colId || !$colEmail || !$colSenha) {
-        throw new Exception("Tabela '{$userTable}' não tem colunas necessárias. Colunas: " . implode(', ', $cols));
+        throw new Exception("Tabela '" . $userTable . "' não tem colunas necessárias. Colunas: " . implode(', ', $cols));
     }
 
     if ($debug) {
-        $info[] = "DB: {$db}";
-        $info[] = "Tabela: {$userTable}";
-        $info[] = "Colunas: id={$colId} | nome=" . ($colNome ?: '-') . " | email={$colEmail} | senha={$colSenha}";
+        $info[] = "DB: " . $db;
+        $info[] = "Tabela: " . $userTable;
+        $info[] = "Colunas: id=" . $colId . " | nome=" . ($colNome ? $colNome : '-') . " | email=" . $colEmail . " | senha=" . $colSenha;
     }
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $email = trim($_POST['email'] ?? '');
-        $pass  = (string)($_POST['password'] ?? '');
+        $email = isset($_POST['email']) ? trim($_POST['email']) : '';
+        $pass  = isset($_POST['password']) ? (string)$_POST['password'] : '';
 
         if ($debug) {
             $info[] = "POST recebido: email=" . ($email !== '' ? $email : '[vazio]') . " | senha_len=" . strlen($pass);
@@ -118,19 +123,26 @@ try {
         if ($email === '' || $pass === '') {
             $erro = "Preencha e-mail e senha.";
         } else {
-            $sql = "SELECT * FROM `{$userTable}` WHERE `{$colEmail}` = ? LIMIT 1";
+            $sql = "SELECT * FROM `" . $userTable . "` WHERE `" . $colEmail . "` = ? LIMIT 1";
             $info_sql = $sql;
 
             $stmt = $pdo->prepare($sql);
-            $stmt->execute([$email]);
+            $stmt->execute(array($email));
             $u = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if (!$u) {
                 $erro = "Usuário não encontrado para esse e-mail/login.";
             } else {
-                $senhaDb = (string)($u[$colSenha] ?? '');
+                $senhaDb = isset($u[$colSenha]) ? (string)$u[$colSenha] : '';
 
-                $ok = password_verify($pass, $senhaDb) || hash_equals($senhaDb, $pass);
+                $ok = false;
+                if ($senhaDb !== '') {
+                    if (function_exists('password_verify') && password_verify($pass, $senhaDb)) {
+                        $ok = true;
+                    } elseif ($senhaDb === $pass) {
+                        $ok = true;
+                    }
+                }
 
                 if (!$ok) {
                     $erro = "Senha incorreta.";
@@ -150,7 +162,7 @@ try {
             }
         }
     }
-} catch (Throwable $e) {
+} catch (Exception $e) {
     $erro = "Erro interno do sistema: " . $e->getMessage();
     $info[] = "ERRO: " . $e->getMessage();
 }
@@ -179,9 +191,9 @@ try {
 
   <?php if ($erro): ?>
     <div class="alert alert-danger mb-3">
-      <?= h($erro) ?>
-      <?php if (!empty($info_sql)): ?>
-        <div class="small mt-2"><b>SQL:</b> <?= h($info_sql) ?></div>
+      <?php echo h($erro); ?>
+      <?php if (!empty($info_sql) && $debug): ?>
+        <div class="small mt-2"><b>SQL:</b> <?php echo h($info_sql); ?></div>
       <?php endif; ?>
     </div>
   <?php endif; ?>
@@ -189,7 +201,7 @@ try {
   <?php if (!empty($info) && $debug): ?>
     <div class="alert alert-secondary small">
       <?php foreach ($info as $line): ?>
-        <div><?= h($line) ?></div>
+        <div><?php echo h($line); ?></div>
       <?php endforeach; ?>
     </div>
   <?php endif; ?>
