@@ -7,13 +7,18 @@ RewriteCond %{HTTP_HOST} ^(localhost|127\.0\.0\.1)$ [NC]
 RewriteRule ^ - [L]
 
 # ============================================
-# 2) FORÇAR HTTPS EM PRODUÇÃO
+# 2) SE JÁ ESTIVER EM /sistema/public, NÃO REDIRECIONA
 # ============================================
-RewriteCond %{HTTPS} off
-RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+RewriteCond %{REQUEST_URI} ^/sistema/public/ [NC]
+RewriteRule ^ - [L]
 
 # ============================================
-# 3) REDIRECIONAR PARA /uniaopirestransportes
+# 3) RAIZ DO PROJETO -> /sistema/public/
 # ============================================
-RewriteCond %{REQUEST_URI} !^/uniaopirestransportes/
-RewriteRule ^(.*)$ /uniaopirestransportes/$1 [L]
+RewriteRule ^$ sistema/public/ [L]
+
+# ============================================
+# 4) QUALQUER ACESSO DO PROJETO -> /sistema/public/
+# ============================================
+RewriteCond %{REQUEST_URI} !^/sistema/public/ [NC]
+RewriteRule ^(.*)$ sistema/public/$1 [L]
