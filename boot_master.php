@@ -112,12 +112,12 @@ function fileMatchesExtCompat($fullPath, $extension)
 
     $basename = basename($fullPath);
 
-    // filtro especial para dotfiles
+    // Dotfiles: .htaccess, .gitignore, .cpanel.yml
     if ($extension === 'dot') {
         return isset($basename[0]) && $basename[0] === '.';
     }
 
-    // sem extensão
+    // Sem extensão: error_log, LICENSE etc.
     if ($extension === 'noext') {
         return pathinfo($basename, PATHINFO_EXTENSION) === '';
     }
