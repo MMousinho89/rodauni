@@ -1,4 +1,7 @@
 <?php
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+
 require_once __DIR__ . '/../config/app.php';
 require_once __DIR__ . '/../config/database.php';
 
@@ -153,10 +156,8 @@ try {
         }
     }
 } catch (Throwable $e) {
-    $erro = "Erro interno do sistema.";
-    if ($debug) {
-        $info[] = "ERRO: " . $e->getMessage();
-    }
+    $erro = "Erro interno do sistema: " . $e->getMessage();
+    $info[] = "ERRO: " . $e->getMessage();
 }
 ?>
 <!DOCTYPE html>
@@ -184,13 +185,13 @@ try {
   <?php if ($erro): ?>
     <div class="alert alert-danger mb-3">
       <?= h($erro) ?>
-      <?php if ($debug && !empty($info_sql)): ?>
+      <?php if (!empty($info_sql)): ?>
         <div class="small mt-2"><b>SQL:</b> <?= h($info_sql) ?></div>
       <?php endif; ?>
     </div>
   <?php endif; ?>
 
-  <?php if ($debug && !empty($info)): ?>
+  <?php if (!empty($info)): ?>
     <div class="alert alert-secondary small">
       <?php foreach ($info as $line): ?>
         <div><?= h($line) ?></div>
