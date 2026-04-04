@@ -5,7 +5,7 @@
 // ============================================
 
 $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
-$host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+$host = isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : 'localhost';
 
 // Caminho do script
 $scriptDir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME']));

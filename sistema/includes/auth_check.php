@@ -4,14 +4,12 @@ require_once __DIR__ . '/../config/app.php';
 
 // Garante sessão ativa
 if (session_status() !== PHP_SESSION_ACTIVE) {
-    // Para localhost com https, isso ajuda o cookie de sessão a ficar consistente
     $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
 
-    // IMPORTANTE: não use domain aqui em localhost
     session_set_cookie_params([
         'lifetime' => 0,
-        'path'     => '/',        // vale para /rodauni/sistema inteiro
-        'secure'   => $isHttps,    // true se estiver em https://localhost
+        'path'     => '/',
+        'secure'   => $isHttps,
         'httponly' => true,
         'samesite' => 'Lax'
     ]);
@@ -19,7 +17,7 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
 
-// Compatibilidade: se algum arquivo antigo gravar outros nomes, tenta “normalizar”
+// Compatibilidade: se algum arquivo antigo gravar outros nomes, tenta normalizar
 if (empty($_SESSION['usuario_id'])) {
     if (!empty($_SESSION['user_id'])) {
         $_SESSION['usuario_id'] = $_SESSION['user_id'];
