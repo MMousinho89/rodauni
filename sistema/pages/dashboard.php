@@ -12,7 +12,6 @@ if (isset($_GET['logout']) && $_GET['logout'] === '1') {
 }
 
 // ======= EXEMPLOS DE DADOS MOCKADOS =======
-// Aqui você depois troca pra SELECT real no banco
 $frotaAtiva  = '--';
 $manutencao  = '--';
 $disponiveis = '--';
@@ -31,11 +30,8 @@ $alertas = [
 
   <title>RODAUNI — Dashboard</title>
 
-  <!-- Bootstrap + Ícones -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-
-  <!-- CSS do sistema -->
   <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/custom.css">
 </head>
 <body class="bg-light">
@@ -46,7 +42,6 @@ $alertas = [
 
     <h2 class="mb-4">Dashboard</h2>
 
-    <!-- Cards de status da frota -->
     <div class="row g-3 mb-4">
         <div class="col-md-3">
             <div class="card shadow-sm border-0 h-100">
@@ -89,7 +84,6 @@ $alertas = [
         </div>
     </div>
 
-    <!-- Alertas operacionais -->
     <div class="card shadow-sm border-0">
         <div class="card-header bg-white border-0 pb-0">
             <h6 class="mb-0"><i class="bi bi-exclamation-triangle text-danger me-2"></i>Alertas Operacionais</h6>
@@ -106,9 +100,8 @@ $alertas = [
                 </ul>
             <?php endif; ?>
 
-            <!-- Botão Importar Programação -->
             <div class="mt-3">
-                <form action="<?= BASE_URL ?>/public/importar_programacao.php" method="post">
+                <form action="<?= BASE_URL ?>/pages/importar_programacao.php" method="post">
                     <button
                         type="submit"
                         class="btn btn-primary fw-semibold shadow-sm"
@@ -124,7 +117,6 @@ $alertas = [
 
 </main>
 
-<!-- Bootstrap bundle -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
