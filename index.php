@@ -1,8 +1,10 @@
 <?php
 header('Content-Type: text/html; charset=UTF-8');
 
-$scriptDir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? ''));
+$scriptName = isset($_SERVER['SCRIPT_NAME']) ? $_SERVER['SCRIPT_NAME'] : '';
+$scriptDir = str_replace('\\', '/', dirname($scriptName));
 $basePath  = rtrim($scriptDir, '/');
+
 if ($basePath === '/' || $basePath === '.') {
     $basePath = '';
 }
@@ -47,7 +49,7 @@ $loginUrl = $basePath . '/sistema/public/login.php';
     <p>Site online ✅</p>
     <p><small>Sistema RODAUNI em implantação.</small></p>
 
-    <a class="btn" href="<?= htmlspecialchars($loginUrl, ENT_QUOTES, 'UTF-8') ?>">Acessar Sistema</a>
+    <a class="btn" href="<?php echo htmlspecialchars($loginUrl, ENT_QUOTES, 'UTF-8'); ?>">Acessar Sistema</a>
   </div>
 </body>
 </html>
